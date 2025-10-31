@@ -1,6 +1,6 @@
 {
 	"name": "@mobiletextalerts/n8n-nodes-mta-mcp",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "n8n node for Mobile Text Alerts MCP server integration",
 	"license": "MIT",
 	"homepage": "https://github.com/mobiletextalerts/n8n-nodes-mobile-text-alerts",
