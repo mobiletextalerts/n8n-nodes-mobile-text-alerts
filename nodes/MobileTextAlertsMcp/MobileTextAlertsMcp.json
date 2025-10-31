@@ -1,0 +1,18 @@
+{
+	"node": "@mobiletextalerts/n8n-nodes-mta-mcp",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Development", "AI"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://github.com/mobiletextalerts/actions-mcp"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://github.com/mobiletextalerts/actions-mcp"
+			}
+		]
+	}
+}
