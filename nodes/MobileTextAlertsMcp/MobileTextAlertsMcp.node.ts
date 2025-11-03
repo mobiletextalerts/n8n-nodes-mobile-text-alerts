@@ -44,6 +44,186 @@ export class MobileTextAlertsMcp implements INodeType {
 				description:
 					'The MCP tool to execute. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
+			// send_message specific parameters
+			{
+				displayName: 'To (Phone Number)',
+				name: 'to',
+				type: 'string',
+				default: '',
+				displayOptions: {
+					show: {
+						tool: ['send_message'],
+					},
+				},
+				description:
+					'Recipient phone number (can be formatted as +1234567890, 234-567-8900, (234) 567-8900, etc.)',
+			},
+			{
+				displayName: 'Message',
+				name: 'message',
+				type: 'string',
+				typeOptions: {
+					rows: 4,
+				},
+				default: '',
+				displayOptions: {
+					show: {
+						tool: ['send_message'],
+					},
+				},
+				description: 'Message content to send',
+			},
+			// schedule_message specific parameters
+			{
+				displayName: 'To (Phone Number)',
+				name: 'to',
+				type: 'string',
+				default: '',
+				displayOptions: {
+					show: {
+						tool: ['schedule_message'],
+					},
+				},
+				description: 'Recipient phone number',
+			},
+			{
+				displayName: 'Message',
+				name: 'message',
+				type: 'string',
+				typeOptions: {
+					rows: 4,
+				},
+				default: '',
+				displayOptions: {
+					show: {
+						tool: ['schedule_message'],
+					},
+				},
+				description: 'Message content to send',
+			},
+			{
+				displayName: 'Scheduled Time',
+				name: 'scheduledTime',
+				type: 'dateTime',
+				default: '',
+				displayOptions: {
+					show: {
+						tool: ['schedule_message'],
+					},
+				},
+				description: 'When to send the message (ISO 8601 format)',
+			},
+			// create_group specific parameters
+			{
+				displayName: 'Group Name',
+				name: 'name',
+				type: 'string',
+				default: '',
+				displayOptions: {
+					show: {
+						tool: ['create_group'],
+					},
+				},
+				description: 'Name of the group to create',
+			},
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				default: '',
+				displayOptions: {
+					show: {
+						tool: ['create_group'],
+					},
+				},
+				description: 'Description of the group',
+			},
+			{
+				displayName: 'Display Name',
+				name: 'displayName',
+				type: 'string',
+				default: '',
+				displayOptions: {
+					show: {
+						tool: ['create_group'],
+					},
+				},
+				description: 'Display name of the group',
+			},
+			{
+				displayName: 'Hidden',
+				name: 'hidden',
+				type: 'boolean',
+				default: false,
+				displayOptions: {
+					show: {
+						tool: ['create_group'],
+					},
+				},
+				description: 'Whether the group should be hidden',
+			},
+			{
+				displayName: 'Sort Order',
+				name: 'sortOrder',
+				type: 'number',
+				default: 0,
+				displayOptions: {
+					show: {
+						tool: ['create_group'],
+					},
+				},
+				description: 'Sort order for the group',
+			},
+			{
+				displayName: 'Is Temporary',
+				name: 'isTemporary',
+				type: 'boolean',
+				default: false,
+				displayOptions: {
+					show: {
+						tool: ['create_group'],
+					},
+				},
+				description: 'Whether the group is temporary',
+			},
+			{
+				displayName: 'Settings (JSON)',
+				name: 'settings',
+				type: 'json',
+				default: '',
+				displayOptions: {
+					show: {
+						tool: ['create_group'],
+					},
+				},
+				description: 'Settings for adaptive group with dynamic membership rules (JSON format)',
+			},
+			// add_subscribers specific parameters
+			{
+				displayName: 'Subscribers (JSON)',
+				name: 'subscribers',
+				type: 'json',
+				default: '',
+				displayOptions: {
+					show: {
+						tool: ['add_subscribers'],
+					},
+				},
+				description: 'Array of subscribers to add/update (JSON format). Each subscriber should have either "number" or "email" field.',
+			},
+			{
+				displayName: 'Create Only',
+				name: 'createOnly',
+				type: 'boolean',
+				default: false,
+				displayOptions: {
+					show: {
+						tool: ['add_subscribers'],
+					},
+				},
+				description: 'Whether to only create new subscribers and skip existing ones. When false, creates new or updates existing subscribers.',
+			},
+			// Generic parameters for other tools
 			{
 				displayName: 'Tool Parameters',
 				name: 'parameters',
@@ -53,6 +233,11 @@ export class MobileTextAlertsMcp implements INodeType {
 					multipleValues: true,
 				},
 				default: {},
+				displayOptions: {
+					hide: {
+						tool: ['send_message', 'schedule_message', 'create_group', 'add_subscribers'],
+					},
+				},
 				options: [
 					{
 						name: 'parameter',
@@ -79,6 +264,19 @@ export class MobileTextAlertsMcp implements INodeType {
 			},
 		],
 		usableAsTool: true,
+		codex: {
+			categories: ['AI'],
+			subcategories: {
+				AI: ['Tools'],
+			},
+			resources: {
+				primaryDocumentation: [
+					{
+						url: 'https://github.com/mobiletextalerts/n8n-nodes-mobile-text-alerts',
+					},
+				],
+			},
+		},
 	};
 
 	methods = {
@@ -154,20 +352,84 @@ export class MobileTextAlertsMcp implements INodeType {
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
 			try {
 				const tool = this.getNodeParameter('tool', itemIndex) as string;
-				const parametersData = this.getNodeParameter('parameters', itemIndex, {}) as {
-					parameter?: Array<{ name: string; value: string }>;
-				};
 
-				// Build parameters object from the fixed collection
+				// Build parameters object
 				const parameters: Record<string, unknown> = {};
-				if (parametersData.parameter) {
-					for (const param of parametersData.parameter) {
-						// Try to parse as JSON if it looks like a JSON value
+
+				// Get parameters based on the selected tool
+				if (tool === 'send_message') {
+					const to = this.getNodeParameter('to', itemIndex, '') as string;
+					const message = this.getNodeParameter('message', itemIndex, '') as string;
+					if (to) parameters.to = to;
+					if (message) parameters.message = message;
+				} else if (tool === 'schedule_message') {
+					const to = this.getNodeParameter('to', itemIndex, '') as string;
+					const message = this.getNodeParameter('message', itemIndex, '') as string;
+					const scheduledTime = this.getNodeParameter('scheduledTime', itemIndex, '') as string;
+					if (to) parameters.to = to;
+					if (message) parameters.message = message;
+					if (scheduledTime) parameters.scheduledTime = scheduledTime;
+				} else if (tool === 'create_group') {
+					const name = this.getNodeParameter('name', itemIndex, '') as string;
+					const description = this.getNodeParameter('description', itemIndex, '') as string;
+					const displayName = this.getNodeParameter('displayName', itemIndex, '') as string;
+					const hidden = this.getNodeParameter('hidden', itemIndex, false) as boolean;
+					const sortOrder = this.getNodeParameter('sortOrder', itemIndex, 0) as number;
+					const isTemporary = this.getNodeParameter('isTemporary', itemIndex, false) as boolean;
+					const settings = this.getNodeParameter('settings', itemIndex, '') as string;
+
+					if (name) parameters.name = name;
+					if (description) parameters.description = description;
+					if (displayName) parameters.displayName = displayName;
+					if (hidden !== undefined) parameters.hidden = hidden;
+					if (sortOrder !== undefined) parameters.sortOrder = sortOrder;
+					if (isTemporary !== undefined) parameters.isTemporary = isTemporary;
+					if (settings) {
 						try {
-							parameters[param.name] = JSON.parse(param.value);
+							parameters.settings = typeof settings === 'string' ? JSON.parse(settings) : settings;
 						} catch {
-							// If not valid JSON, use as string
-							parameters[param.name] = param.value;
+							// If JSON parsing fails, skip settings
+						}
+					}
+				} else if (tool === 'add_subscribers') {
+					const subscribers = this.getNodeParameter('subscribers', itemIndex, '') as string;
+					const createOnly = this.getNodeParameter('createOnly', itemIndex, false) as boolean;
+
+					if (subscribers) {
+						try {
+							parameters.subscribers = typeof subscribers === 'string' ? JSON.parse(subscribers) : subscribers;
+						} catch {
+							// If JSON parsing fails, skip subscribers
+						}
+					}
+					if (createOnly !== undefined) parameters.createOnly = createOnly;
+				} else {
+					// For other tools, use the flexible parameter collection
+					const parametersData = this.getNodeParameter('parameters', itemIndex, {}) as {
+						parameter?: Array<{ name: string; value: string }>;
+					};
+
+					if (parametersData.parameter) {
+						for (const param of parametersData.parameter) {
+							// Try to parse as JSON if it looks like a JSON value
+							try {
+								parameters[param.name] = JSON.parse(param.value);
+							} catch {
+								// If not valid JSON, use as string
+								parameters[param.name] = param.value;
+							}
+						}
+					}
+				}
+
+				// When used as a tool by AI Agent, parameters come from input JSON
+				// Merge input JSON parameters with UI parameters (input takes precedence)
+				const inputJson = items[itemIndex].json;
+				if (inputJson && typeof inputJson === 'object') {
+					// Filter out n8n metadata fields
+					for (const [key, value] of Object.entries(inputJson)) {
+						if (!key.startsWith('_') && key !== 'json') {
+							parameters[key] = value;
 						}
 					}
 				}
